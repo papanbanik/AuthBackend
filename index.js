@@ -11,7 +11,6 @@ import "./config/passport.js"
 
 const app = express()
 
-
 app.use(cors({
   origin: [
     'https://auth-frontend-9vkd.vercel.app',
@@ -22,9 +21,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }))
 
-// ✅ OPTIONS request handle করো
-app.options('*', cors())
-
 app.use(express.json())
 app.use(cookieParser())
 
@@ -33,8 +29,8 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: true,        
-    sameSite: 'none'     
+    secure: true,
+    sameSite: 'none'
   }
 }))
 
