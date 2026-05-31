@@ -11,19 +11,31 @@ import "./config/passport.js"
 
 const app = express()
 
+
+app.use(cors({
+  origin: [
+    'https://auth-frontend-9vkd.vercel.app',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+}))
+
+// ✅ OPTIONS request handle করো
+app.options('*', cors())
+
 app.use(express.json())
 app.use(cookieParser())
 
-app.use(cors({
-  origin: 'https://auth-frontend-9vkd.vercel.app',
-  credentials: true
-}))
-
-// 🔥 session MUST come before passport
 app.use(session({
   secret: "mysecretkey",
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    secure: true,        
+    sameSite: 'none'     
+  }
 }))
 
 app.use(passport.initialize())
@@ -31,7 +43,7 @@ app.use(passport.session())
 
 connectDB()
 
-app.get('/', (req,res)=>{
+app.get('/', (req, res) => {
   res.send('API Working')
 })
 
