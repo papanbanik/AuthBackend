@@ -24,7 +24,7 @@ import jwt from "jsonwebtoken"
 route.get(
   "/auth/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:3000/login",
+    failureRedirect: "https://auth-frontend-9vkd.vercel.app/login",
     session: false
   }),
   (req, res) => {
@@ -41,12 +41,12 @@ route.get(
     
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, 
-      sameSite: "lax"
+      secure: true, 
+      sameSite: "none"
     })
 
     
-    res.redirect("http://localhost:3000/")
+    res.redirect("https://auth-frontend-9vkd.vercel.app/")
   }
 )
 export default route;
