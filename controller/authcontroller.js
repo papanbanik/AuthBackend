@@ -135,7 +135,17 @@ export const Login = async (req, res) => {
 
 export const LogOut = async (req, res) => {
   try {
-    res.clearCookie("token", COOKIE_OPTIONS)
+    
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none"
+    })
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax"
+    })
 
     return res.json({
       success: true,
