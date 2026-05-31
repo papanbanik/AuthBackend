@@ -3,13 +3,6 @@ import bcrypt from 'bcrypt'
 import transporter from '../config/nodemailer.js'
 import jwt from "jsonwebtoken"
 
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',  
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', 
-  maxAge: 7 * 24 * 60 * 60 * 1000
-}
-
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email },
@@ -48,8 +41,6 @@ export const SignUp = async (req, res) => {
 
     const token = generateToken(user)
 
-    res.cookie("token", token, COOKIE_OPTIONS)
-
     await transporter.sendMail({
       from: process.env.SENDER_EMAIL,
       to: email,
@@ -60,11 +51,7 @@ export const SignUp = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "User created successfully",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
+      token: token
     })
 
   } catch (error) {
@@ -113,16 +100,10 @@ export const Login = async (req, res) => {
 
     const token = generateToken(user)
 
-    res.cookie("token", token, COOKIE_OPTIONS)
-
     return res.json({
       success: true,
       message: "Login successful",
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name
-      }
+      token: token
     })
 
   } catch (error) {
@@ -135,23 +116,10 @@ export const Login = async (req, res) => {
 
 export const LogOut = async (req, res) => {
   try {
-    
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none"
-    })
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax"
-    })
-
     return res.json({
       success: true,
       message: "Logged out"
     })
-
   } catch (error) {
     return res.json({
       success: false,
