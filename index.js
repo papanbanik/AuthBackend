@@ -2,40 +2,29 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import session from "express-session"
-import passport from "passport"
+import passport from 'passport'
 
 import route from './router.js'
 import connectDB from './config/mongodb.js'
-import "./config/passport.js"
+import './config/passport.js'
 
 const app = express()
 
 app.use(cors({
   origin: [
-    'https://auth-frontend-9vkd.vercel.app',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'https://auth-frontend-9vkd.vercel.app'
   ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+  allowedHeaders: ["Content-Type", "Authorization"]
 }))
 
 app.use(express.json())
 app.use(cookieParser())
 
-app.use(session({
-  secret: "mysecretkey",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: true,
-    sameSite: 'none'
-  }
-}))
-
+// Passport without session
 app.use(passport.initialize())
-app.use(passport.session())
 
 connectDB()
 

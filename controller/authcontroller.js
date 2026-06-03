@@ -7,7 +7,7 @@ const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "1d" }
   )
 }
 
@@ -66,7 +66,7 @@ export const Login = async (req, res) => {
   const { email, password } = req.body
 
   if (!email || !password) {
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "Email and password required"
     })
@@ -76,14 +76,14 @@ export const Login = async (req, res) => {
     const user = await Model.findOne({ email })
 
     if (!user) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         message: "Invalid email"
       })
     }
 
     if (!user.password) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         message: "Google account detected"
       })
@@ -92,7 +92,7 @@ export const Login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password)
 
     if (!isMatch) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         message: "Invalid password"
       })
@@ -100,14 +100,14 @@ export const Login = async (req, res) => {
 
     const token = generateToken(user)
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       message: "Login successful",
-      token: token
+      token
     })
 
   } catch (error) {
-    return res.json({
+    return res.status(500).json({
       success: false,
       message: error.message
     })
@@ -128,42 +128,28 @@ export const LogOut = async (req, res) => {
   }
 }
 
-export const sendVerifyOtp = async (req, res) => {
+export const sendVerifyOtp = async () => {
   try {
-    const user = await Model.findById(req.userId)
+    const token = getToken()
 
-    if (!user) {
-      return res.json({ success: false, message: "User not found" })
+    if (!token) {
+      toast.error("Please login again")
+      return
     }
 
-    if (user.isAccountVerified) {
-      return res.json({ success: false, message: "Already verified" })
-    }
+    const { data } = await axios.post(
+      `${backendUrl}/send-verify-otp`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000))
-
-    user.verifyOtp = otp
-    user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000
-
-    await user.save()
-
-    await transporter.sendMail({
-      from: process.env.SENDER_EMAIL,
-      to: user.email,
-      subject: "OTP Verification",
-      text: `Your OTP is ${otp}`
-    })
-
-    return res.json({
-      success: true,
-      message: "OTP sent"
-    })
-
-  } catch (error) {
-    return res.json({
-      success: false,
-      message: error.message
-    })
+    toast.success(data.message)
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed")
   }
 }
 

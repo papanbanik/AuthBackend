@@ -1,30 +1,50 @@
 import express from 'express'
-import { SignUp,Login,LogOut,sendVerifyOtp, verifyEmail, sendResetOtp, resetPassword,isAuthenticated } from './controller/authcontroller.js'
-import { getUserData} from './controller/UserController.js'
-import passport from "passport"
+import passport from 'passport'
+import jwt from 'jsonwebtoken'
+import 'dotenv/config'
+
+import {
+  SignUp,
+  Login,
+  LogOut,
+  sendVerifyOtp,
+  verifyEmail,
+  sendResetOtp,
+  resetPassword,
+  isAuthenticated
+} from './controller/authcontroller.js'
+
+import { getUserData } from './controller/UserController.js'
 import userAuth from './middleware/userAuth.js'
-const route=express.Router();
+
+const route = express.Router()
 
 route.post('/signup', SignUp)
-route.post('/login',Login)
-route.post('/logout',LogOut)
-route.post('/send-verify-otp',userAuth,sendVerifyOtp);
-route.post('/verify-account',userAuth, verifyEmail);
-route.post('/send-reset-otp', sendResetOtp);
+route.post('/login', Login)
+route.post('/logout', LogOut)
+
+route.post('/send-verify-otp', userAuth, sendVerifyOtp)
+route.post('/verify-account', userAuth, verifyEmail)
+route.post('/send-reset-otp', sendResetOtp)
 route.post('/reset-password', resetPassword)
-route.get('/data',userAuth, getUserData)
-route.get("/is-auth", userAuth, isAuthenticated)
+
+route.get('/data', userAuth, getUserData)
+route.get('/is-auth', userAuth, isAuthenticated)
+
+// Google Login
 route.get(
-  "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  '/auth/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: false
+  })
 )
 
-import jwt from "jsonwebtoken"
-
+// Google Callback
 route.get(
-  "/auth/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: "https://auth-frontend-9vkd.vercel.app/login",
+  '/auth/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: `${process.env.CLIENT_URL}/login`,
     session: false
   }),
   (req, res) => {
@@ -35,18 +55,14 @@ route.get(
         email: req.user.email
       },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: '7d' }
     )
 
-    
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true, 
-      sameSite: "none"
-    })
+    // 🔥 auto detect environment redirect
+    const redirectUrl = `${process.env.CLIENT_URL}/login?token=${token}`
 
-    
-    res.redirect("https://auth-frontend-9vkd.vercel.app/")
+    res.redirect(redirectUrl)
   }
 )
-export default route;
+
+export default route
