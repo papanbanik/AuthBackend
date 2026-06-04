@@ -42,9 +42,10 @@ route.get(
 
 // Google Callback
 route.get(
+  
   '/auth/google/callback',
   passport.authenticate('google', {
-    failureRedirect: `${process.env.CLIENT_URL}/login`,
+    failureRedirect: `${process.env.NODE_ENV==="production" ? process.env.PRODUCTION_URL : process.env.CLIENT_URL}/login`,
     session: false
   }),
   (req, res) => {
@@ -57,9 +58,8 @@ route.get(
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     )
-
-    // 🔥 auto detect environment redirect
-    const redirectUrl = `${process.env.CLIENT_URL}/login?token=${token}`
+  const baseURL = process.env.NODE_ENV === 'production' ? process.env.PRODUCTION_URL : process.env.CLIENT_URL
+    const redirectUrl = `${baseURL}/login?token=${token}`
 
     res.redirect(redirectUrl)
   }

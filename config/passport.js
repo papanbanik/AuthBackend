@@ -1,3 +1,6 @@
+// config/passport.js — top of file
+console.log('CALLBACK URL:', process.env.GOOGLE_CALLBACK_URL)
+console.log('CLIENT ID:', process.env.GOOGLE_CLIENT_ID)
 import passport from "passport"
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
 import User from "../model/userModel.js"
