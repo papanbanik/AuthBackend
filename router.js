@@ -61,6 +61,9 @@ route.get(
   const baseURL = process.env.NODE_ENV === 'production' ? process.env.PRODUCTION_URL : process.env.CLIENT_URL
     const redirectUrl = `${baseURL}/login?token=${token}`
 
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+    res.set("Pragma", "no-cache")
+    res.set("Expires", "0")
     res.redirect(redirectUrl)
   }
 )
