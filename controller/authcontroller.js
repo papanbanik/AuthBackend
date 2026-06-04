@@ -128,28 +128,39 @@ export const LogOut = async (req, res) => {
   }
 }
 
-export const sendVerifyOtp = async () => {
+export const sendVerifyOtp = async (req, res) => {
   try {
-    const token = getToken()
+    const user = await Model.findById(req.userId)
 
-    if (!token) {
-      toast.error("Please login again")
-      return
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      })
     }
 
-    const { data } = await axios.post(
-      `${backendUrl}/send-verify-otp`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    )
+    const otp = String(Math.floor(100000 + Math.random() * 900000))
+    user.verifyOtp = otp
+    user.verifyOtpExpireAt = Date.now() + 15 * 60 * 1000
 
-    toast.success(data.message)
-  } catch (err) {
-    toast.error(err.response?.data?.message || "Failed")
+    await user.save()
+
+    await transporter.sendMail({
+      from: process.env.SENDER_EMAIL,
+      to: user.email,
+      subject: "Verify your email",
+      text: `Your verification OTP is ${otp}`
+    })
+
+    return res.json({
+      success: true,
+      message: "Verification OTP sent"
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    })
   }
 }
 
