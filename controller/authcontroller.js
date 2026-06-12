@@ -3,12 +3,15 @@ import bcrypt from 'bcrypt'
 import transporter from '../config/nodemailer.js'
 import jwt from "jsonwebtoken"
 
-const generateToken = (user) => {
+export const CreateAccessToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: "1d" }
+    process.env.JWT_Access_SECRET,
+    { expiresIn: "15m" }
   )
+}
+export const CreateRefreshToken=(user)=>{
+  return jwt.sign({id: user._id, email: user.email}, process.env.JWT_Refresh_SECRET, {expiresIn: '7m'})
 }
 
 export const SignUp = async (req, res) => {
@@ -32,28 +35,34 @@ export const SignUp = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
-
     const user = await Model.create({
       name,
       email,
       password: hashedPassword
     })
-
-    const token = generateToken(user)
-
-    await transporter.sendMail({
+    const accessToken= CreateAccessToken(user)
+    const refreshToken= CreateRefreshToken(user)
+   
+    res.cookie('refreshToken', refreshToken,{
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    })
+     await transporter.sendMail({
       from: process.env.SENDER_EMAIL,
       to: email,
       subject: "Welcome",
       text: `Welcome ${name}`
     })
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "User created successfully",
-      token: token
+      token : accessToken,
+      user:{ id: user._id, name: user.name, email: user.email}
     })
-
+   
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -68,6 +77,7 @@ export const Login = async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({
       success: false,
+       code: "GOOGLE_ACCOUNT",
       message: "Email and password required"
     })
   }
@@ -85,7 +95,7 @@ export const Login = async (req, res) => {
     if (!user.password) {
       return res.status(401).json({
         success: false,
-        message: "Google account detected"
+        message: "Google account detected, Please use Google to Sign In"
       })
     }
 
@@ -98,12 +108,21 @@ export const Login = async (req, res) => {
       })
     }
 
-    const token = generateToken(user)
-
+    const accessToken= CreateAccessToken(user)
+    const refreshToken= CreateRefreshToken(user)
+   
+    res.cookie('refreshToken', refreshToken,{
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge:  7 * 24 * 60 * 60 * 1000
+    })
+    
     return res.status(200).json({
       success: true,
       message: "Login successful",
-      token
+      token : accessToken,
+      user:{ id: user._id, name: user.name, email: user.email}
     })
 
   } catch (error) {
@@ -116,6 +135,11 @@ export const Login = async (req, res) => {
 
 export const LogOut = async (req, res) => {
   try {
+    res.clearCookie("refreshToken",{
+      httpOnly: true,
+      secure : true,
+      sameSite : "none"
+    })
     return res.json({
       success: true,
       message: "Logged out"

@@ -2,6 +2,7 @@ import Model from '../model/userModel.js'
 
 export const getUserData= async(req,res)=>{
     try{
+    
        const userId = req.userId;
         const user= await Model.findById(userId)
         if(!user)
@@ -15,7 +16,6 @@ export const getUserData= async(req,res)=>{
                 email: user.email,
                 isAccountVerified: user.isAccountVerified
                       }
-
         })
     }
     catch(error){
@@ -24,4 +24,35 @@ export const getUserData= async(req,res)=>{
     message: error.message
   });
     }
+}
+
+export const updateProfile = async(req,res)=>{
+    try{
+       const userId= req.userId
+       const {name, email} = req.body;
+       if(!name || !email)
+       {
+        return res.status(400).json({message : "Name and Email are required"})
+       }
+       const updateUser= await Model.findByIdAndUpdate(
+        userId,
+        {
+            name,
+            email,
+        },
+        {
+            new : true,
+        }
+       );
+     if(updateUser)
+      return res.status(200).json({
+      message: "Profile updated successfully",
+      uservalue: {
+        name,
+        email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+  }
 }
