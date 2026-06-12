@@ -39,14 +39,17 @@ app.use(cors({
   optionsSuccessStatus: 200
 }))
 
-// Ensure OPTIONS preflight requests are handled for all routes
-app.options('*', cors())
-
 app.use(express.json())
 app.use(cookieParser())
 
 app.use(passport.initialize())
-connectDB()
+
+// Only connect to DB if URI is provided
+if (process.env.MONGODB_URI) {
+  connectDB()
+} else {
+  console.warn('⚠️ MONGODB_URI not set, skipping database connection')
+}
 
 app.get('/', (req, res) => {
   res.send('API Working')
