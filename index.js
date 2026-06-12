@@ -7,6 +7,15 @@ import route from './router.js'
 import connectDB from './config/mongodb.js'
 import './config/passport.js'
 const app = express()
+
+// Validate required env vars
+const requiredEnvVars = ['JWT_Access_SECRET', 'JWT_Refresh_SECRET', 'MONGODB_URI']
+const missingVars = requiredEnvVars.filter(v => !process.env[v])
+if (missingVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingVars)
+  console.error('Please set these in your .env file or Vercel environment variables')
+}
+
 const whitelist = [
   'http://localhost:3000',
   'https://auth-frontend-9vkd.vercel.app',
@@ -44,6 +53,15 @@ app.get('/', (req, res) => {
 })
 
 app.use('/', route)
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('🔥 Server Error:', err.message)
+  res.status(500).json({
+    success: false,
+    message: err.message || 'Internal Server Error'
+  })
+})
 
 const PORT = process.env.PORT || 3001
 if (process.env.NODE_ENV !== 'production') {
