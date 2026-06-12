@@ -17,16 +17,17 @@ const whitelist = [
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true)
-    if (whitelist.indexOf(origin) !== -1) {
+    if (whitelist.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
       return callback(null, true)
     }
-    return callback(new Error('Not allowed by CORS'))
+    // Don't throw error on CORS rejection, just pass false
+    callback(null, false)
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 200
 }))
 
 // Ensure OPTIONS preflight requests are handled for all routes
