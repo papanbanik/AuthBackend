@@ -3,73 +3,77 @@ import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import passport from 'passport'
+
 import route from './router.js'
 import connectDB from './config/mongodb.js'
 import './config/passport.js'
+
 const app = express()
 
-// Validate required env vars
-const requiredEnvVars = ['JWT_Access_SECRET', 'JWT_Refresh_SECRET', 'MONGODB_URI']
-const missingVars = requiredEnvVars.filter(v => !process.env[v])
+/* ---------------- ENV CHECK ---------------- */
+const requiredEnvVars = [
+  'JWT_ACCESS_SECRET',
+  'JWT_REFRESH_SECRET',
+  'MONGODB_URI'
+]
+
+const missingVars = requiredEnvVars.filter(
+  (key) => !process.env[key]
+)
+
 if (missingVars.length > 0) {
-  console.error('❌ Missing required environment variables:', missingVars)
-  console.error('Please set these in your .env file or Vercel environment variables')
+  console.error('❌ Missing ENV:', missingVars)
 }
 
-const whitelist = [
-  'http://localhost:3000',
-  'https://auth-frontend-9vkd.vercel.app',
-  process.env.CLIENT_URL,
-  process.env.PRODUCTION_URL
-].filter(Boolean)
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true)
-    if (whitelist.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-      return callback(null, true)
-    }
-    // Don't throw error on CORS rejection, just pass false
-    callback(null, false)
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  preflightContinue: false,
-  optionsSuccessStatus: 200
-}))
-
-app.use(express.json())
-app.use(cookieParser())
-
-app.use(passport.initialize())
-
-// Only connect to DB if URI is provided
+/* ---------------- DB CONNECT ---------------- */
 if (process.env.MONGODB_URI) {
   connectDB()
-} else {
-  console.warn('⚠️ MONGODB_URI not set, skipping database connection')
 }
 
+/* ---------------- MIDDLEWARE ---------------- */
+
+/* CORS (IMPORTANT FIX) */
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    process.env.CLIENT_URL,
+    process.env.PRODUCTION_URL
+  ].filter(Boolean),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
+
+// IMPORTANT: handle preflight requests
+app.options(/.*/, cors())
+app.use(express.json())
+app.use(cookieParser())
+app.use(passport.initialize())
+
+/* ---------------- ROUTES ---------------- */
 app.get('/', (req, res) => {
-  res.send('API Working')
+  res.send('API is running 🚀')
 })
 
 app.use('/', route)
 
-// Global error handler
+/* ---------------- GLOBAL ERROR HANDLER ---------------- */
 app.use((err, req, res, next) => {
-  console.error('🔥 Server Error:', err.message)
+  console.error('🔥 Server Error:', err)
+
   res.status(500).json({
     success: false,
     message: err.message || 'Internal Server Error'
   })
 })
 
+/* ---------------- SERVER START ---------------- */
 const PORT = process.env.PORT || 3001
+
+// Only run locally (Vercel uses serverless)
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
-    console.log(`server running on http://localhost:${PORT}`)
+    console.log(`🚀 Server running on http://localhost:${PORT}`)
   })
 }
 
